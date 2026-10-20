@@ -1,2 +1,4 @@
 <Solution>
+  <Project Path="Stratosphere.Core/Stratosphere.Core.csproj" />
+  <Project Path="Stratosphere.Rendering/Stratosphere.Rendering.csproj" />
 </Solution>
