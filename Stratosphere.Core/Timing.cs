@@ -18,7 +18,7 @@ public readonly struct GameTick : IEquatable<GameTick>, IComparable<GameTick>
 
     /* RobustToolbox does this, so i guess i will too...? this is very... questionable given its a ulong. */
     public override int GetHashCode() => (int)Value;
-    public int CompareTo(GameTick o) => Value.CompareTo(o);
+    public int CompareTo(GameTick o) => Value.CompareTo(o.Value);
 
     public static bool operator ==(GameTick a, GameTick b) => a.Value == b.Value;
     public static bool operator !=(GameTick a, GameTick b) => a.Value != b.Value;
