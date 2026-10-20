@@ -27,11 +27,11 @@ Beware of BRUTAL's licensing requirements.
 
 ## Licensing
 
-![Code MIT License](https://img.shields.io/badge/code%20licence-MIT-green?style=for-the-badge)
+![Code MIT License](https://img.shields.io/badge/code%20license-MIT-green?style=for-the-badge)
 
 The core of the project (the code and the likes) is licensed under MIT.
 
-![Assets Creative Commons 4.0 BY-SA License](https://img.shields.io/badge/asset%20licence-CC_4.0_BY--SA-lightblue?style=for-the-badge)
+![Assets Creative Commons 4.0 BY-SA License](https://img.shields.io/badge/asset%20license-CC_4.0_BY--SA-lightblue?style=for-the-badge)
 
 However, assets (models, artwork, sound files...) will be licensed under [CC-BY-SA-4.0](https://creativecommons.org/licenses/by-sa/4.0) unless stated otherwise.
 
