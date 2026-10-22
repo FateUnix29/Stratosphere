@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Stratosphere.Core.ECS.BuiltInComponents;
 using Stratosphere.Core.ECS.Events;
 using Stratosphere.Core.ECS.Prototypes;
@@ -76,6 +77,21 @@ public sealed class World
             ? (T) system
             : throw new InvalidOperationException($"No {typeof(T).Name} has been added.");
 
+    /// <summary>
+    /// Creates and adds every system in the given assembly marked with the RegisterSystem attribute,
+    /// in an order that respects their UpdatesAfter attributes UpdatesBefore attributes.
+    /// Systems with no specified ordering between them are simply sorted by name, in order to keep the order the same every run.
+    /// Manually added systems remain unaffected by this.
+    /// </summary>
+    public void AddSystemsFromAssembly(Assembly assembly)
+    {
+        foreach (var type in SystemScanner.FindInOrder(assembly, _systemsByType.Keys))
+            AddSystem((EntitySystem)Activator.CreateInstance(type)!);
+    }
+
+    /// <summary>
+    /// Calls the initialization function of all systems that have (theoretically) not had Initialize called yet.
+    /// </summary>
 	private void InitializeSystems()
 	{
 		while (_initializedSystems < _systems.Count)

@@ -14,12 +14,13 @@ public sealed partial class PrototypeManager
     /// <summary>
     /// Registers a prototype. Duplicate IDs will ArgumentException.
     /// </summary>
-    /// <param name="prototype"></param>
     public void Register(EntityPrototype prototype)
     {
         /* my instinct is to use IsNullOrWhitespace but honestly if you manage to get a whitespace id from yml congratulations you deserve it to work */
         if (string.IsNullOrEmpty(prototype.ID))
             throw new ArgumentException("Prototypes must have an ID.");
+        if (prototype.Parents is { Length: > 0 })
+            throw new ArgumentException($"Prototype '{prototype.ID}' lists parents, but parents are only resolved for prototypes loaded from YAML.");
         if (!_entities.TryAdd(prototype.ID, prototype))
             throw new ArgumentException($"Duplicate entity prototype ID '{prototype.ID}'.");
     }
@@ -29,5 +30,6 @@ public sealed partial class PrototypeManager
     public EntityPrototype Index(string id)
         => _entities.TryGetValue(id, out var prototype)
         ? prototype
-        : throw new KeyNotFoundException($"Unknown entity prototype '{id}'.");
+        : throw new KeyNotFoundException($"Unknown entity prototype '{id}'."
+            + (_pending.Count > 0 ? $" ({_pending.Count} YAML prototypes are loaded but not resolved yet; call Resolve().)" : ""));
 }
