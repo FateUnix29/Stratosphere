@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using Stratosphere.Core.ECS.BuiltInComponents;
+using Stratosphere.Core.ECS.Events;
 using Stratosphere.Core.ECS.Prototypes;
+using Stratosphere.Core.ECS.Systems;
 
 namespace Stratosphere.Core.ECS;
 
@@ -11,22 +13,87 @@ public sealed class World
     private readonly Dictionary<Type, IComponentStore> _stores = new();
     private readonly List<EntityUid> _queuedForDestruction = new();
 
+	/* Ran in order of addition */
+	private readonly List<EntitySystem> _systems = new();
+    private readonly Dictionary<Type, EntitySystem> _systemsByType = new();
+    private int _initializedSystems;
+
+    private readonly EventBus _events;
+
     private long _nextId = 1;
     public GameTick CurTick { get; private set; } = GameTick.Zero;
 
     public int EntityCount => _alive.Count;
 
-    public World(PrototypeManager prototypes) { _prototypes = prototypes; }
+    public World(PrototypeManager prototypes)
+    {
+    	_prototypes = prototypes;
+    	_events = new EventBus(this);
+	}
 
     /// <summary>
-    /// Advances world by a single tick.
+    /// Advances world by a single tick. Systems update, destruction happens, etc.
     /// </summary>
-    public void Tick()
+    public void Tick(float deltaTime)
     {
-        /* TODO: Update methods. */
+        InitializeSystems();
+
+ 		int count = _systems.Count; /* Preventing us from getting fucked over if a system is somehow added mid-tick. */
+ 		for (int i = 0; i < count; i++) _systems[i].Update(deltaTime);
+
+		FlushQueuedDestructions();
+
         CurTick += 1;
-        foreach (EntityUid queued in _queuedForDestruction) Destroy(queued);
     }
+
+	/// <summary>Advancss world by one tick in which no time passes. Useful for turn-based games and the likes. */
+	public void Tick() => Tick(0f);
+
+	private void FlushQueuedDestructions()
+	{
+		if (_queuedForDestruction.Count == 0) return;
+
+		/* Copy the list and clear it rather than just iterating jt directly, in case a destruction queues more destructions. */
+		var batch = _queuedForDestruction.ToArray();
+		_queuedForDestruction.Clear();
+
+		foreach (EntityUid queued in batch) Destroy(queued);
+	}
+	
+
+	public T AddSystem<T>(T system) where T : EntitySystem
+	{
+		if (!_systemsByType.TryAdd(system.GetType(), system))
+			throw new InvalidOperationException($"A {system.GetType().Name} has already been added.");
+
+		system.Attach(this);
+		_systems.Add(system);
+		return system;
+	}
+
+	public T GetSystem<T>() where T : EntitySystem
+		=> _systemsByType.TryGetValue(typeof(T), out var system)
+            ? (T) system
+            : throw new InvalidOperationException($"No {typeof(T).Name} has been added.");
+
+	private void InitializeSystems()
+	{
+		while (_initializedSystems < _systems.Count)
+			_systems[_initializedSystems++].Initialize();
+	}
+
+
+	internal void SubscribeLocalEvent<TComp, TEvent>(ComponentEventHandler<TComp, TEvent> handler)
+    	where TComp : class, IComponent
+        where TEvent : struct, IEvent
+        => _events.Subscribe(handler);
+
+	public void RaiseLocalEvent<TEvent>(EntityUid entity, ref TEvent args) where TEvent : struct, IEvent
+        => _events.Raise(entity, ref args);
+
+	public void RaiseLocalEvent<TEvent>(EntityUid entity, TEvent args) where TEvent : struct, IEvent
+        => _events.Raise(entity, ref args);
+
 
     /// <summary>
     /// Creates a new, blank entity.
