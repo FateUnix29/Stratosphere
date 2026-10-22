@@ -9,6 +9,7 @@ public sealed class World
     private readonly PrototypeManager _prototypes;
     private readonly HashSet<EntityUid> _alive = new();
     private readonly Dictionary<Type, IComponentStore> _stores = new();
+    private readonly List<EntityUid> _queuedForDestruction = new();
 
     private long _nextId = 1;
     public GameTick CurTick { get; private set; } = GameTick.Zero;
@@ -20,7 +21,12 @@ public sealed class World
     /// <summary>
     /// Advances world by a single tick.
     /// </summary>
-    public void Tick() => CurTick += 1;
+    public void Tick()
+    {
+        /* TODO: Update methods. */
+        CurTick += 1;
+        foreach (EntityUid queued in _queuedForDestruction) Destroy(queued);
+    }
 
     /// <summary>
     /// Creates a new, blank entity.
@@ -102,6 +108,11 @@ public sealed class World
         foreach (var store in _stores.Values)
         { if (store.Remove(entity, out var removed)) removed.LifeStatus = ComponentLifeStatus.Deleted; }
     }
+
+    /// <summary>
+    /// Destroy this entity at the end of the tick. Recommended over Destroy in environments with queries.
+    /// </summary>
+    public void QueueDestroy(EntityUid entity) => _queuedForDestruction.Add(entity);
 
     /// <summary>
     /// Attempts to read from the MetadataComponent of an entity to return a display name.
