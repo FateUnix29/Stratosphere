@@ -21,19 +21,67 @@ public class EntityPrototype : IPrototype, IInheritingPrototype
     /// </summary>
     [DataField("description")] public string? Description { get; private set; }
 
-    public string[]? Parents { get; private set; }
-    public bool Abstract { get; private set; }
+    /// <summary>
+    /// The IDs of prototypes this one derives/inherits from.
+    /// </summary>
+    [DataField("parents")] public string[]? Parents { get; private set; }
+
+    /// <summary>
+    /// Abstract prototypes only exist to be derived from, and cannot be spawned.
+    /// </summary>
+    [DataField("abstract")] public bool Abstract { get; private set; }
 
     /* Not very data-oriented of us. */
     [DataField("components")]
     public ComponentRegistry Components = new();
 
-    public EntityPrototype()
+    /// <summary>
+    /// For the YAML loader/deserializer.
+    /// </summary>
+    public EntityPrototype() {}
+
+    /// <summary>
+    /// For constructing a prototype manually in code (for testing and the likes).
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="name"></param>
+    /// <param name="description"></param>
+    /// <param name="parents"></param>
+    /// <param name="isAbstract"></param>
+    public EntityPrototype(string id, string? name = null, string? description = null, string[]? parents = null, bool isAbstract = false)
     {
-        /* TODO ... Something like a Transform component. */
-        Components.Add("Metadata", new ComponentRegiEntry(new MetadataComponent()));
+        ID = id;
+        DisplayName = name;
+        Description = description;
+        Parents = parents;
+        Abstract = isAbstract;
+    }
+
+    /// <summary>
+    /// Adds a component template to the internal dictionary.
+    /// </summary>
+    /// <param name="component"></param>
+    public EntityPrototype With(IComponent component)
+    {
+        /* every entity gets a MetadataComponent, regardless of if the prototype defined it or not */
+        Components.Add(ComponentNames.Of(component.GetType()), new ComponentRegiEntry(component));
+        return this;
     }
 }
+
+
+public static class ComponentNames
+{
+    public static string Of(Type componentType)
+    {
+        const string suffix = "Component"; /* MetadataComponent becomes Metadata */
+        var name = componentType.Name;
+
+        return name.EndsWith(suffix, StringComparison.Ordinal) && name.Length > suffix.Length
+            ? name[..^suffix.Length] : name;
+    }
+}
+
 
 public readonly struct ComponentRegiEntry
 {

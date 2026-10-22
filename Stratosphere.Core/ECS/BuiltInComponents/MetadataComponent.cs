@@ -36,5 +36,14 @@ public sealed partial class MetadataComponent : Component
         }
     }
 
+    public string EntityPrototype
+    {
+        get
+        {
+            if (_entityPrototype != null) return _entityPrototype.ID;
+            return string.Empty;
+        }
+    }
+
     /* Currently, this component is only used to store per-entity name and description information. */
 }

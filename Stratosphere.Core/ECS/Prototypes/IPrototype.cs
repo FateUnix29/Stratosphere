@@ -22,8 +22,6 @@ public interface IPrototype
 /// </summary>
 public interface IInheritingPrototype
 {
-    [DataField("parents")]
     string[]? Parents { get; }
-    [DataField("abstract")]
     bool Abstract { get; }
 }

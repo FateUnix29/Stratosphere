@@ -38,4 +38,10 @@ public interface IComponent
     /// The tick the component was created.
     /// </summary>
     GameTick CreationTick { get; internal set; }
+
+    /// <summary>
+    /// Makes a fresh copy of this component's data, as if it'd never been added to anything.
+    /// Mainly used when an entity is spawned fresh from a prototype.
+    /// </summary>
+    IComponent Clone();
 }

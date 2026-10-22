@@ -1,4 +1,6 @@
 <Solution>
   <Project Path="Stratosphere.Core/Stratosphere.Core.csproj" />
+  <Project Path="Stratosphere.Core.Tests/Stratosphere.Core.Tests.csproj" />
   <Project Path="Stratosphere.Rendering/Stratosphere.Rendering.csproj" />
+  <Project Path="Stratosphere.Sandbox/Stratosphere.Sandbox.csproj" />
 </Solution>

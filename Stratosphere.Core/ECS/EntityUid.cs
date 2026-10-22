@@ -12,7 +12,8 @@ public readonly struct EntityUid : IEquatable<EntityUid>, IComparable<EntityUid>
     /// </summary>
     public static readonly EntityUid INVALID = new(0);
  
-    public EntityUid(long id) { Id = id; }
+    /* I think only the World should be handing out IDs... Maybe... */
+    internal EntityUid(long id) { Id = id; }
 
     /// <summary>
     /// Whether or not this ID is valid.
