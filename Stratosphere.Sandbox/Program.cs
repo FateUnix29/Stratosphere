@@ -155,6 +155,7 @@ public sealed class BasicGame
                 case ConsoleKey.D: xDelta = 1; break;
                 case ConsoleKey.E: useItem = true; break;
                 case ConsoleKey.Q: dropItem = true; break;
+                case ConsoleKey.Escape: shouldContinue = false; break;
             }
 
             PositionComponent pos = world.Get<PositionComponent>(player);
