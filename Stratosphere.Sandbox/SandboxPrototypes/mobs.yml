@@ -28,4 +28,4 @@
     hp: 80
     maxHp: 80
   - type: Enemy
-    attackDamage: 10
+    attackDamage: 5
