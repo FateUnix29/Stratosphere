@@ -8,4 +8,4 @@
     char: "o"
     drawOrder: 1
   - type: Throwable
-    throwDamage: 10
+    throwDamage: 20

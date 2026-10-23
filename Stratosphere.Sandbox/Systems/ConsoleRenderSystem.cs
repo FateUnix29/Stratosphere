@@ -21,7 +21,10 @@ public sealed class ConsoleRenderSystem : EntitySystem
         for (int y = 0; y < height; y++)
             for (int x = 0; x < width; x++)
             {
-                chars[y,x] = '.';
+                chars[y,x] = ' ';
+                if (x == 0 || y == 0
+                 || x == _state.SizeX-1 || y == _state.SizeY-1)
+                    chars[y,x] = '.';
                 order[y,x] = int.MinValue;
             }
 
