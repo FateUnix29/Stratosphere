@@ -8,7 +8,7 @@
     char: "/"
     drawOrder: 1
   - type: Swingable
-    swingDamage: 25
+    swingDamage: 50
   - type: Tags
     tags:
       doNotRenderIfHeld: true
