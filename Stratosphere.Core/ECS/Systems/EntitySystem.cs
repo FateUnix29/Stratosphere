@@ -8,8 +8,8 @@ public abstract partial class EntitySystem : IEntitySystem
 	protected World World { get; private set; } = null!;
 	internal void Attach(World world) => World = world;
 	
-    public abstract void Initialize();
-    public abstract void Update(float deltaTime);
+    public virtual void Initialize() {}
+    public virtual void Update(float deltaTime) {}
 
     protected void SubscribeLocalEvent<TComp, TEvent>(ComponentEventHandler<TComp, TEvent> handler)
     	where TComp :  class,  IComponent

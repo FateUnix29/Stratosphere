@@ -1,0 +1,11 @@
+- type: entity
+  id: rock
+  name: Rock
+  description: A random rock. You could probably throw it.
+  parent: BaseItem
+  components:
+  - type: Glyph
+    char: "o"
+    drawOrder: 1
+  - type: Throwable
+    throwDamage: 10

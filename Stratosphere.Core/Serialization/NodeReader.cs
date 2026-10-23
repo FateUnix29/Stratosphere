@@ -251,7 +251,7 @@ internal static class NodeReader
 
         void Add(string tag, bool required, Type memberType, Action<object, object?> set, string where)
         {
-            if (!members.TryAdd(tag, new Member { Tag = tag, Type = type, Required = required, Set = set }))
+            if (!members.TryAdd(tag, new Member { Tag = tag, Type = memberType, Required = required, Set = set }))
                 throw new InvalidOperationException($"{type.FullName} has two [DataField(\"{tag}\")] members ({where}).");
         }
 

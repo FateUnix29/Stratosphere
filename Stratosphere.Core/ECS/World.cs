@@ -92,7 +92,7 @@ public sealed class World
     /// <summary>
     /// Calls the initialization function of all systems that have (theoretically) not had Initialize called yet.
     /// </summary>
-	private void InitializeSystems()
+	public void InitializeSystems()
 	{
 		while (_initializedSystems < _systems.Count)
 			_systems[_initializedSystems++].Initialize();

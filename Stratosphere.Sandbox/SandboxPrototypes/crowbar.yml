@@ -1,0 +1,14 @@
+- type: entity
+  id: crowbar
+  name: Crowbar
+  description: A heavy iron lever that does fine as a weapon in a pinch.
+  parent: BaseItem
+  components:
+  - type: Glyph
+    char: "/"
+    drawOrder: 1
+  - type: Swingable
+    swingDamage: 20
+  - type: Tags
+    tags:
+      doNotRenderIfHeld: true

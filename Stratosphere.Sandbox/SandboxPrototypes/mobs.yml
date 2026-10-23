@@ -1,0 +1,31 @@
+- type: entity
+  id: player
+  name: You
+  description: ...It's you.
+  parent: BaseMob
+  components:
+  - type: Glyph
+    char: "#"
+    drawOrder: 3
+  - type: Health
+    hp: 100
+    maxHp: 100
+  - type: Regen
+    amount: 10
+    delay: 3
+  - type: Player
+
+- type: entity
+  id: enemy
+  name: Unknown
+  description: A threat of some kind. Defend yourself.
+  parent: BaseMob
+  components:
+  - type: Glyph
+    char: "!"
+    drawOrder: 2
+  - type: Health
+    hp: 80
+    maxHp: 80
+  - type: Enemy
+    attackDamage: 10

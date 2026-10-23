@@ -1,0 +1,17 @@
+# abstracts that are only inherited from
+- type: entity
+  id: BaseMob
+  abstract: true
+  components:
+  - type: Position
+  - type: Solid
+  - type: Facing
+  - type: Health
+
+- type: entity
+  id: BaseItem
+  abstract: true
+  components:
+  - type: Position
+  - type: Solid
+  - type: Item

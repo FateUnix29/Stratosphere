@@ -11,4 +11,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- YAML travels with the game, so... -->
+    <None Update="SandboxPrototypes\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
