@@ -1,6 +1,5 @@
 using System.Text;
 using Stratosphere.Core.ECS;
-using Stratosphere.Core.ECS.BuiltInComponents;
 using Stratosphere.Core.ECS.Systems;
 
 namespace Stratosphere.Sandbox;
