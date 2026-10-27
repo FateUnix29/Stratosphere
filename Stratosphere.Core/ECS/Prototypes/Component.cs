@@ -33,5 +33,3 @@ public abstract partial class Component : IComponent
         return copy;
     }
 }
-
-/* TODO ... Events. */

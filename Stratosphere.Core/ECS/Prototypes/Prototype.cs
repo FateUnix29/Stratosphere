@@ -103,4 +103,5 @@ public sealed class ComponentRegistry : Dictionary<string, ComponentRegiEntry>
     }
 
     /* TODO ... Generic-type TryGetComponent signature? */
+    /* NOTE ... Likely done already, but I can't remember */
 }
