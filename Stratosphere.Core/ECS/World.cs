@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using Stratosphere.Core.ECS.BuiltInComponents;
+using Stratosphere.Core.ECS.Components;
 using Stratosphere.Core.ECS.Events;
 using Stratosphere.Core.ECS.Prototypes;
 using Stratosphere.Core.ECS.Systems;
@@ -30,6 +30,9 @@ public sealed class World
     {
     	_prototypes = prototypes;
     	_events = new EventBus(this);
+
+        /* The engine's own systems (for now, just the transforms system) are always present, same as the engine's own components! */
+        AddSystemsFromAssembly(typeof(World).Assembly);
 	}
 
     /// <summary>
@@ -156,10 +159,19 @@ public sealed class World
             }
             meta._entityPrototype = prototype;
 
-            /* Only now, with everyone safely added, do we start them.
-               Need to fire init events and whatnot here. TODO. */
+            /* Every entity also has a Transform, so that every entity has a place in the World, even if that's... Nowhere in particular. */
+            if (!Has<TransformComponent>(uid))
+            {
+                var transform = new TransformComponent();
+                AddRaw(uid, transform);
+                added.Add(transform);
+            }
+
+            /* Only now, with everyone safely added, do we start them. */
             foreach (var component in added)
                 component.LifeStatus = ComponentLifeStatus.Started;
+            foreach (var component in added)
+                RaiseLifecycle<ComponentStartup>(uid, component);
         }
         catch
         {
@@ -188,6 +200,23 @@ public sealed class World
     {
         if (!_alive.Remove(entity)) return;
 
+        List<IComponent>? stopping = null;
+        foreach (var component in GetComponents(entity))
+        {
+            if (!component.Active) continue;
+            (stopping ??= new()).Add(component);
+        }
+
+        if (stopping != null)
+        {
+            foreach (var component in stopping)
+            {
+                component.LifeStatus = ComponentLifeStatus.Stopping;
+                RaiseLifecycle<ComponentShutdown>(entity, component);
+            }
+        }
+
+        /* Handlers can do damn near anything, so we need to look at the stores fresh. */
         foreach (var store in _stores.Values)
         { if (store.Remove(entity, out var removed)) removed.LifeStatus = ComponentLifeStatus.Deleted; }
     }
@@ -211,7 +240,8 @@ public sealed class World
         RequireExists(entity);
         GetOrCreateStore<T>().Add(entity, component);
         component.CreationTick = CurTick;
-        component.LifeStatus = ComponentLifeStatus.Started; /* Still need to do events... */
+        component.LifeStatus = ComponentLifeStatus.Started;
+        RaiseLifecycle<ComponentStartup>(entity, component);
         return component;
     }
 
@@ -249,6 +279,14 @@ public sealed class World
     /// </summary>
     public bool Remove<T>(EntityUid entity) where T : class, IComponent
     {
+        if (!TryGet<T>(entity, out var component)) return false;
+
+        if (component.Active)
+        {
+            component.LifeStatus = ComponentLifeStatus.Stopping;
+            RaiseLifecycle<ComponentShutdown>(entity, component);
+        }
+
         if (!_stores.TryGetValue(typeof(T), out var store) || !store.Remove(entity, out var removed)) return false;
         removed.LifeStatus = ComponentLifeStatus.Deleted;
         return true;
@@ -301,6 +339,12 @@ public sealed class World
         }
     }
 
+
+    private void RaiseLifecycle<TEvent>(EntityUid entity, IComponent component) where TEvent : struct, IEvent
+    {
+        var args = default(TEvent);
+        _events.RaiseForComponent(entity, component.GetType(), ref args);
+    }
 
     private void RequireExists(EntityUid entity)
     { if (!Exists(entity)) throw new InvalidOperationException($"Entity {entity} does not exist."); }

@@ -6,4 +6,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!--<ItemGroup>
+    <InternalsVisibleTo Include="Stratosphere.Rendering.Tests" />
+  </ItemGroup>--> <!-- who needs them tests anyway -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stratosphere.Core\Stratosphere.Core.csproj" />
+  </ItemGroup>
+
 </Project>

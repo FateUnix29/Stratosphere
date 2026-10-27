@@ -68,6 +68,13 @@ internal static class NodeReader
 
         if (underlying != null) type = underlying;
         if (type == typeof(object)) return ReadUntyped(node, source);
+
+        if (DataParsers.TryGet(type, out var parse))
+        {
+            try { return parse(ReadUntyped(node, source)!); }
+            catch (DataFormatException e) { throw Error(source, node, e.Message); }
+        }
+
         if (type == typeof(string)) return Scalar(node, source, type).Value ?? "";
         if (type == typeof(bool))
         {

@@ -1,7 +1,8 @@
 using Stratosphere.Core.ECS.Prototypes;
 
-namespace Stratosphere.Core.ECS.BuiltInComponents;
+namespace Stratosphere.Core.ECS.Components;
 
+[RegisterComponent]
 public sealed partial class MetadataComponent : Component
 {
     /* This RobustToolbox inspired stuff looks weird at first, but it's pretty clever.

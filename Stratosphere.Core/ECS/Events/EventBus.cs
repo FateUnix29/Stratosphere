@@ -32,10 +32,26 @@ internal sealed class EventBus
 		for (int i = 0; i < count; i++)
 			list[i].Invoke(_world, entity, ref args);
 	}
+
+	/// <summary>
+	/// Like Raise(), but for a specific component on an entity.
+	/// </summary>
+	public void RaiseForComponent<TEvent>(EntityUid entity, Type componentType, ref TEvent args) where TEvent : struct, IEvent
+	{
+		if (!_subscriptions.TryGetValue(typeof(TEvent), out var existing)) return;
+
+		var list = (List<EventSubscription<TEvent>>)existing;
+
+		int count = list.Count;
+		for (int i = 0; i < count; i++)
+			if (list[i].ComponentType == componentType)
+				list[i].Invoke(_world, entity, ref args);
+	}
 }
 
 internal abstract class EventSubscription<TEvent> where TEvent : struct, IEvent
 {
+	public abstract Type ComponentType { get; }
 	public abstract void Invoke(World world, EntityUid entity, ref TEvent args);
 }
 
@@ -46,6 +62,8 @@ internal sealed class ComponentEventSubscription<TComp, TEvent> : EventSubscript
 	private readonly ComponentEventHandler<TComp, TEvent> _handler;
 
 	public ComponentEventSubscription(ComponentEventHandler<TComp, TEvent> handler) { _handler = handler; }
+
+	public override Type ComponentType => typeof(TComp);
 
 	public override void Invoke(World world, EntityUid entity, ref TEvent args)
 	{

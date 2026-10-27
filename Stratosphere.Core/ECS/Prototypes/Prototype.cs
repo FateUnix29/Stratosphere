@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using Stratosphere.Core.ECS.BuiltInComponents;
+using Stratosphere.Core.ECS.Components;
 
 namespace Stratosphere.Core.ECS.Prototypes;
 
