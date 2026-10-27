@@ -1,5 +1,6 @@
 using Stratosphere.Core.ECS;
 using Stratosphere.Core.ECS.Prototypes;
+using Stratosphere.Core.Logging;
 
 namespace Stratosphere.Sandbox;
 
@@ -26,7 +27,11 @@ public sealed class Game
         prototypes.LoadDirectory(prototypeDirectory);
         prototypes.Resolve();
 
-        var world = new World(prototypes);
+        LogManager logs = new() { DefaultLevel = LogLevel.Debug };
+        FileSink fileSink = new("stratosandbox.log");
+        logs.AddSink(fileSink);
+
+        var world = new World(prototypes, logs);
         world.AddSystemsFromAssembly(typeof(Game).Assembly);
         world.InitializeSystems();
         world.GetSystem<GameStateSystem>().Configure(sizeX, sizeY, seed);

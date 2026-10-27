@@ -37,7 +37,7 @@ public sealed class TransformSystem : EntitySystem
         for (int depth = 0; parent.IsValid(); depth++)
         {
             if (depth > MaxDepth) throw new InvalidOperationException($"Transform hierarchy above {entity} is cyclic or absurdly deep.");
-            if (depth > WarningDepth) { } /* TODO logging is required */
+            if (depth > WarningDepth) { Log.Warning($"Depth {depth} is above warning threshold {WarningDepth}. Whatever you've done, it's created a very deep hierarchy. Fix it."); }
             var up = World.Get<TransformComponent>(parent); /* because what do you mean you dont have a transform component? */
 
             /* to move from a child space to a parent space, first turn the way the parent is turned, then shift by where it is. */

@@ -4,6 +4,7 @@ using Stratosphere.Core.ECS.Components;
 using Stratosphere.Core.ECS.Events;
 using Stratosphere.Core.ECS.Prototypes;
 using Stratosphere.Core.ECS.Systems;
+using Stratosphere.Core.Logging;
 
 namespace Stratosphere.Core.ECS;
 
@@ -26,10 +27,15 @@ public sealed class World
 
     public int EntityCount => _alive.Count;
 
-    public World(PrototypeManager prototypes)
+    public LogManager Logs { get; }
+    private readonly Sawmill _log;
+
+    public World(PrototypeManager prototypes, LogManager? logs = null)
     {
     	_prototypes = prototypes;
     	_events = new EventBus(this);
+        Logs = logs ?? new LogManager();
+        _log = Logs.GetSawmill("world");
 
         /* The engine's own systems (for now, just the transforms system) are always present, same as the engine's own components! */
         AddSystemsFromAssembly(typeof(World).Assembly);
@@ -43,7 +49,7 @@ public sealed class World
         InitializeSystems();
 
  		int count = _systems.Count; /* Preventing us from getting fucked over if a system is somehow added mid-tick. */
- 		for (int i = 0; i < count; i++) _systems[i].Update(deltaTime);
+ 		for (int i = 0; i < count; i++) UpdateSystem(_systems[i], deltaTime);
 
 		FlushQueuedDestructions();
 
@@ -52,6 +58,16 @@ public sealed class World
 
 	/// <summary>Advancss world by one tick in which no time passes. Useful for turn-based games and the likes. */
 	public void Tick() => Tick(0f);
+
+    private void UpdateSystem(EntitySystem system, float deltaTime)
+    {
+        try { system.Update(deltaTime); }
+        catch (Exception e)
+        {
+            _log.Error(e, $"{system.GetType().Name} threw during tick {CurTick}!");
+            throw;
+        }
+    }
 
 	private void FlushQueuedDestructions()
 	{
@@ -72,6 +88,7 @@ public sealed class World
 
 		system.Attach(this);
 		_systems.Add(system);
+        _log.Debug($"Added system {system.GetType().Name} (#{_systems.Count}).");
 		return system;
 	}
 
@@ -98,7 +115,11 @@ public sealed class World
 	public void InitializeSystems()
 	{
 		while (_initializedSystems < _systems.Count)
-			_systems[_initializedSystems++].Initialize();
+        {
+			var system = _systems[_initializedSystems++];
+            _log.Debug($"Initializing {system.GetType().Name}...");
+            system.Initialize();
+        }
 	}
 
 

@@ -1,5 +1,6 @@
 using Stratosphere.Core.ECS.Events;
 using Stratosphere.Core.ECS.Prototypes;
+using Stratosphere.Core.Logging;
 
 namespace Stratosphere.Core.ECS.Systems;
 
@@ -7,7 +8,11 @@ public abstract partial class EntitySystem : IEntitySystem
 {
 	protected World World { get; private set; } = null!;
 	internal void Attach(World world) => World = world;
-	
+
+	private Sawmill? _log;
+
+	protected Sawmill Log => _log ??= World.Logs.GetSawmill(GetType().Name);
+
     public virtual void Initialize() {}
     public virtual void Update(float deltaTime) {}
 
