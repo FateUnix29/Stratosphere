@@ -42,7 +42,7 @@ public sealed class FileSink : ILogSink, IDisposable
         var directory = Path.GetDirectoryName(Path.GetFullPath(path));
         if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
 
-        _writer = new StreamWriter(new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read)) { AutoFlush = true };
+        _writer = new StreamWriter(new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read)) { AutoFlush = true };
     }
 
     public void Write(in LogEntry entry) => _writer.WriteLine(LogFormat.Format(entry));
