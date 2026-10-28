@@ -8,7 +8,7 @@ using Stratosphere.Core.Logging;
 
 namespace Stratosphere.Core.ECS;
 
-public sealed class World
+public sealed partial class World
 {
     private readonly PrototypeManager _prototypes;
     private readonly HashSet<EntityUid> _alive = new();
@@ -48,9 +48,10 @@ public sealed class World
     {
         InitializeSystems();
 
- 		int count = _systems.Count; /* Preventing us from getting fucked over if a system is somehow added mid-tick. */
- 		for (int i = 0; i < count; i++) UpdateSystem(_systems[i], deltaTime);
+        try { Scheduler.Run(this, deltaTime, MaxParallelism); }
+        catch { DiscardCommands(); throw; }
 
+        FlushCommands();
 		FlushQueuedDestructions();
 
         CurTick += 1;
@@ -59,7 +60,7 @@ public sealed class World
 	/// <summary>Advancss world by one tick in which no time passes. Useful for turn-based games and the likes. */
 	public void Tick() => Tick(0f);
 
-    private void UpdateSystem(EntitySystem system, float deltaTime)
+    internal void RunSystemUpdate(EntitySystem system, float deltaTime)
     {
         try { system.Update(deltaTime); }
         catch (Exception e)
@@ -88,6 +89,7 @@ public sealed class World
 
 		system.Attach(this);
 		_systems.Add(system);
+        _scheduler = null; /* must rebuild our scheduler plan now... */
         _log.Debug($"Added system {system.GetType().Name} (#{_systems.Count}).");
 		return system;
 	}
@@ -129,10 +131,13 @@ public sealed class World
         => _events.Subscribe(handler);
 
 	public void RaiseLocalEvent<TEvent>(EntityUid entity, ref TEvent args) where TEvent : struct, IEvent
-        => _events.Raise(entity, ref args);
+    {
+        ForbidInParallel("Raising an event");
+        _events.Raise(entity, ref args);
+    }
 
 	public void RaiseLocalEvent<TEvent>(EntityUid entity, TEvent args) where TEvent : struct, IEvent
-        => _events.Raise(entity, ref args);
+        => RaiseLocalEvent(entity, ref args);
 
 
     /// <summary>
@@ -140,6 +145,7 @@ public sealed class World
     /// </summary>
     public EntityUid CreateEntity()
     {
+        ForbidInParallel("Creating an entity");
         EntityUid uid = new EntityUid(_nextId++);
         _alive.Add(uid);
         return uid;
@@ -155,6 +161,7 @@ public sealed class World
     /// </summary>
     public EntityUid Spawn(string prototypeId)
     {
+        ForbidInParallel("Spawning an entity");
         var prototype = _prototypes.Index(prototypeId);
         if (prototype.Abstract) throw new InvalidOperationException($"Prototype '{prototypeId}' is abstract and can't be spawned.");
 
@@ -219,6 +226,7 @@ public sealed class World
     /// </summary>
     public void Destroy(EntityUid entity)
     {
+        ForbidInParallel("Destroying an entity");
         if (!_alive.Remove(entity)) return;
 
         List<IComponent>? stopping = null;
@@ -245,7 +253,11 @@ public sealed class World
     /// <summary>
     /// Destroy this entity at the end of the tick. Recommended over Destroy in environments with queries.
     /// </summary>
-    public void QueueDestroy(EntityUid entity) => _queuedForDestruction.Add(entity);
+    public void QueueDestroy(EntityUid entity)
+    {
+        ForbidInParallel("QueueDestroy");
+        _queuedForDestruction.Add(entity);
+    }
 
     /// <summary>
     /// Attempts to read from the MetadataComponent of an entity to return a display name.
@@ -258,6 +270,7 @@ public sealed class World
     /// </summary>
     public T Add<T>(EntityUid entity, T component) where T : class, IComponent
     {
+        ForbidInParallel("Adding a component");
         RequireExists(entity);
         GetOrCreateStore<T>().Add(entity, component);
         component.CreationTick = CurTick;
@@ -275,13 +288,17 @@ public sealed class World
     /// Returns whether or not an entity has a specified component type.
     /// </summary>
     public bool Has<T>(EntityUid entity) where T : class, IComponent
-        => _stores.TryGetValue(typeof(T), out var store) && ((ComponentStore<T>)store).Has(entity);
+    {
+        CheckAccess(typeof(T));
+        return _stores.TryGetValue(typeof(T), out var store) && ((ComponentStore<T>)store).Has(entity);
+    }
 
     /// <summary>
     /// Attempts to retrieve a component of a certain type from an entity.
     /// </summary>
     public bool TryGet<T>(EntityUid entity, [NotNullWhen(true)] out T? component) where T : class, IComponent
     {
+        CheckAccess(typeof(T));
         if (_stores.TryGetValue(typeof(T), out var store))
             return ((ComponentStore<T>)store).TryGet(entity, out component);
 
@@ -298,9 +315,15 @@ public sealed class World
     /// <summary>
     /// Removes a component of a specified type from an entity.
     /// </summary>
-    public bool Remove<T>(EntityUid entity) where T : class, IComponent
+    public bool Remove<T>(EntityUid entity) where T : class, IComponent => RemoveBoxed(entity, typeof(T));
+
+    /// <summary>
+    /// Removes a component whose type is only known at runtime.
+    /// </summary>
+    internal bool RemoveBoxed(EntityUid entity, Type type)
     {
-        if (!TryGet<T>(entity, out var component)) return false;
+        ForbidInParallel("Removing a component");
+        if (!_stores.TryGetValue(type, out var store) || !store.TryGetBoxed(entity, out var component)) return false;
 
         if (component.Active)
         {
@@ -308,10 +331,23 @@ public sealed class World
             RaiseLifecycle<ComponentShutdown>(entity, component);
         }
 
-        if (!_stores.TryGetValue(typeof(T), out var store) || !store.Remove(entity, out var removed)) return false;
+        if (!store.Remove(entity, out var removed)) return false;
         removed.LifeStatus = ComponentLifeStatus.Deleted;
         return true;
     }
+
+    /// <summary>
+    /// Adds a component whose type is only known at runtime.
+    /// </summary>
+    internal void AddBoxed(EntityUid entity, IComponent component)
+    {
+        ForbidInParallel("Adding a component");
+        RequireExists(entity);
+        AddRaw(entity, component);
+        component.LifeStatus = ComponentLifeStatus.Started;
+        RaiseLifecycle<ComponentStartup>(entity, component);
+    }
+
 
     public EntityPrototype? PrototypeOf(EntityUid entity)
     {
@@ -328,6 +364,7 @@ public sealed class World
     /// </summary>
     public IEnumerable<(EntityUid Entity, T Component)> Query<T>() where T : class, IComponent
     {
+        CheckAccess(typeof(T));
         if (!_stores.TryGetValue(typeof(T), out var store)) yield break;
 
         var components = (ComponentStore<T>)store;
@@ -351,6 +388,8 @@ public sealed class World
         where T1 : class, IComponent
         where T2 : class, IComponent
     {
+        CheckAccess(typeof(T1));
+        CheckAccess(typeof(T2));
         if (!_stores.TryGetValue(typeof(T1), out var store1) || !_stores.TryGetValue(typeof(T2), out var store2))
             yield break;
 
