@@ -329,8 +329,17 @@ public sealed class World
     public IEnumerable<(EntityUid Entity, T Component)> Query<T>() where T : class, IComponent
     {
         if (!_stores.TryGetValue(typeof(T), out var store)) yield break;
-        foreach (var (entity, component) in ((ComponentStore<T>)store).All)
-            yield return (entity, component);
+
+        var components = (ComponentStore<T>)store;
+        int version = components.Version;
+
+        for (int i = 0; i < components.Count; i++)
+        {
+            if (components.Version != version) throw QueryModified<T>();
+            yield return (components.OwnerAt(i), components.ComponentAt(i));
+        }
+
+        if (components.Version != version) throw QueryModified<T>();
     }
 
     /// <summary>
@@ -347,18 +356,35 @@ public sealed class World
 
         var first  = (ComponentStore<T1>)store1;
         var second = (ComponentStore<T2>)store2;
+        int version1 = first.Version, version2 = second.Version;
 
+        /* Do whoever's shorter first, look the other up. */
         if (first.Count <= second.Count)
         {
-            foreach (var (entity, a) in first.All)
-                if (second.TryGet(entity, out var b)) yield return (entity, a, b);
+            /*foreach (var (entity, a) in first.All)
+                if (second.TryGet(entity, out var b)) yield return (entity, a, b);*/ /* oh how much simpler it used to be. */
+            for (int i = 0; i < first.Count; i++)
+            {
+                if (first.Version != version1 || second.Version != version2) throw QueryModified<T1>();
+                if (second.TryGet(first.OwnerAt(i), out var b)) yield return (first.OwnerAt(i), first.ComponentAt(i), b);
+            }
         }
         else
         {
-            foreach (var (entity, b) in second.All)
-                if (first.TryGet(entity, out var a)) yield return (entity, a, b);
+            for (int i = 0; i < second.Count; i++)
+            {
+                if (first.Version != version1 || second.Version != version2) throw QueryModified<T1>();
+                if (first.TryGet(second.OwnerAt(i), out var a)) yield return (second.OwnerAt(i), a, second.ComponentAt(i));
+            }
         }
+
+        if (first.Version != version1 || second.Version != version2) throw QueryModified<T1>();
     }
+
+
+    private static InvalidOperationException QueryModified<T>()
+        => new($"{typeof(T).Name} components were added/removed while iterating over them. Use ToArray() first for safety, or QueueDestroy!");
+
 
 
     private void RaiseLifecycle<TEvent>(EntityUid entity, IComponent component) where TEvent : struct, IEvent
