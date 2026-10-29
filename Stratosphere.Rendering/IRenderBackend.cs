@@ -15,13 +15,21 @@ namespace Stratosphere.Rendering;
 /// </remarks>
 public interface IRenderBackend : IDisposable
 {
-    TextureHandle CreateTexture(in TextureDescription description, ReadOnlySpan<byte> rgba8);
-    void DestroyHandle(TextureHandle texture);
+    SizeI ScreenSize { get; }
 
-    RenderTargetHandle CreateRenderTarget(in RenderTargetDescription description, out TextureHandle color);
-    void DestroyRenderTarget(RenderTargetHandle target);
+    void CreateTexture(TextureHandle handle, in TextureDescription description, ReadOnlySpan<byte> rgba8);
+    void DestroyTexture(TextureHandle handle);
 
-    SizeI GetTargetSize(RenderTargetHandle target);
+    void CreateRenderTarget(RenderTargetHandle handle, TextureHandle color, in RenderTargetDescription description);
+    void DestroyRenderTarget(RenderTargetHandle handle);
 
+    /// <summary>
+    /// Draws each view in order, for each view quad in order, before swapping buffers.
+    /// </summary>
     void Render(RenderFrame frame);
+
+    /// <summary>
+    /// Called regularly when there's nothing to draw, as to keep a window responsive.
+    /// </summary>
+    void Pump() { }
 }

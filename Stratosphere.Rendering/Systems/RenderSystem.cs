@@ -9,12 +9,11 @@ namespace Stratosphere.Rendering.Systems;
 [RegisterSystem]
 public sealed class RenderSystem : EntitySystem
 {
-    public IRenderBackend? Backend { get; set; }
+    public IRenderDevice? Device { get; set; }
     public ITextureProvider? Textures { get; set; }
 
     private TransformSystem _transforms = null!;
     private SpriteSystem _sprites = null!;
-    private readonly RenderFrame _frame = new();
     private readonly List<(int Order, EntityUid Uid, CameraComponent Camera)> _cameras = new();
 
     public override void Initialize()
@@ -23,11 +22,11 @@ public sealed class RenderSystem : EntitySystem
         _sprites = World.GetSystem<SpriteSystem>();
     }
 
-    public RenderFrame BuildFrame()
+    public void BuildFrame(RenderFrame frame)
     {
-        var backend = Backend ?? throw new InvalidOperationException("RenderSystem cannot build a frame without a backend.");
+        var device = Device ?? throw new InvalidOperationException("RenderSystem cannot build a frame without a device.");
 
-        _frame.Clear();
+        frame.Clear();
         _cameras.Clear();
 
         foreach (var (uid, camera) in World.Query<CameraComponent>())
@@ -38,21 +37,30 @@ public sealed class RenderSystem : EntitySystem
 
         foreach (var (_, uid, camera) in _cameras)
         {
-            var targetSize = backend.GetTargetSize(camera.Target);
+            var targetSize = device.GetTargetSize(camera.Target);
             var viewport = PixelViewport(camera.Viewport, targetSize);
             if (viewport.Width <= 0 || viewport.Height <= 0) continue; /* minimized window, probably */
 
             var view = MakeView(uid, camera, viewport);
-            _sprites.Extract(_frame.AddView(in view), Textures);
+            _sprites.Extract(frame.AddView(in view), Textures);
         }
-
-        return _frame;
     }
 
     public void Render()
     {
-        var frame = BuildFrame();
-        Backend!.Render(frame);
+        var device = Device ?? throw new InvalidOperationException("RenderSystem cannot render without a device.");
+        var frame = device.AcquireFrame();
+
+        try { BuildFrame(frame); }
+        catch
+        {
+            /* Can't draw an empty frame, but it has to go back... Draw empty. */
+            frame.Clear();
+            device.Submit(frame);
+            throw;
+        }
+
+        device.Submit(frame);
     }
 
     private RenderView MakeView(EntityUid uid, CameraComponent camera, RectI viewport)
