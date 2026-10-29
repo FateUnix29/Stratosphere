@@ -3,7 +3,7 @@ using Stratosphere.Core.ECS.Systems;
 
 namespace Stratosphere.Sandbox;
 
-[RegisterSystem]
+[RegisterSystem, ParallelSystem(Reads=[typeof(HealthComponent), typeof(PlayerComponent)])]
 public sealed class SwingSystem : EntitySystem
 {
     private CellIndexSystem _cells = null!;
@@ -25,7 +25,7 @@ public sealed class SwingSystem : EntitySystem
             if (!World.Has<HealthComponent>(target) || World.Has<PlayerComponent>(target)) continue;
 
             var damage = new DamageEvent { Amount = swing.SwingDamage, Source = item };
-            World.RaiseLocalEvent(target, ref damage);
+            Commands.Raise(target, damage);
             args.Hit = true;
         }
     }

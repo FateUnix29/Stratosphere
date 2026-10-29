@@ -48,8 +48,8 @@ public sealed partial class World
         var scope = AccessScope.Current;
         if (scope != null && !scope.Allows(component))
             throw new InvalidOperationException(
-                $"{scope.SystemName} is a parallel system trying to read/write {component.Name}, which it did not declare."
-                + $"Add it to [ParallelSystem(Reads = ..., Writes = ...)], please. That way, the world's scheduler knows what it can run alongside."
+                $"{scope.SystemName} is a parallel system trying to read/write {component.Name}, which it did not declare. "
+                + $"Please add it to [ParallelSystem(Reads = ..., Writes = ...)]. That way, the world's scheduler knows what it can run alongside."
             );
     }
 

@@ -4,6 +4,7 @@ using Stratosphere.Core.ECS.Systems;
 namespace Stratosphere.Sandbox;
 
 [RegisterSystem, UpdatesAfter(typeof(ThrowSystem), typeof(EnemyAISystem), typeof(RegenSystem))]
+[ParallelSystem(Writes=[typeof(HealthComponent), typeof(RegenComponent)])]
 public sealed class HealthSystem : EntitySystem
 {
     public override void Initialize()
@@ -24,13 +25,13 @@ public sealed class HealthSystem : EntitySystem
             if (health.Hp > 0) continue;
 
             var death = new DeathEvent();
-            World.RaiseLocalEvent(uid, ref death);
-            World.QueueDestroy(uid);
+            Commands.Raise(uid, death);
+            Commands.Destroy(uid);
         }
     }
 }
 
-[RegisterSystem]
+[RegisterSystem, ParallelSystem(Reads=[typeof(RegenComponent)], Writes=[typeof(HealthComponent)])]
 public sealed class RegenSystem : EntitySystem
 {
     public override void Update(float deltaTime)

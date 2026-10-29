@@ -3,7 +3,7 @@ using Stratosphere.Core.ECS.Systems;
 
 namespace Stratosphere.Sandbox;
 
-[RegisterSystem]
+[RegisterSystem, ParallelSystem(Writes=[typeof(PositionComponent), typeof(FacingComponent)])]
 public sealed class MovementSystem : EntitySystem
 {
     private GameStateSystem _state = null!;

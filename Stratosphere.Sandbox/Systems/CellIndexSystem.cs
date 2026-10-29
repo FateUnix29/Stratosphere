@@ -5,6 +5,7 @@ using Stratosphere.Core.ECS.Systems;
 namespace Stratosphere.Sandbox;
 
 [RegisterSystem]
+[ParallelSystem(Reads=[typeof(PositionComponent), typeof(ItemComponent), typeof(SolidComponent)])]
 public sealed class CellIndexSystem : EntitySystem
 {
     private static readonly List<EntityUid> Nothing = new();

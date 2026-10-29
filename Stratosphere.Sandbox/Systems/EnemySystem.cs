@@ -4,6 +4,7 @@ using Stratosphere.Core.ECS.Systems;
 namespace Stratosphere.Sandbox;
 
 [RegisterSystem, UpdatesAfter(typeof(ThrowSystem))]
+[ParallelSystem(Reads=[typeof(EnemyComponent), typeof(PositionComponent)])]
 public sealed class EnemyAISystem : EntitySystem
 {
     private GameStateSystem _state = null!;
@@ -21,17 +22,19 @@ public sealed class EnemyAISystem : EntitySystem
             if ((dx != 0 || dy != 0) && target.X == pos.X + dx && target.Y == pos.Y + dy)
             {
                 var damage = new DamageEvent { Amount = enemy.AttackDamage, Source = enemyUid };
-                World.RaiseLocalEvent(_state.Player, ref damage);
+                /*World.RaiseLocalEvent(_state.Player, ref damage);*/
+                Commands.Raise(_state.Player, damage);
             }
 
             if (World.CurTick.Value % (ulong)Math.Max(1, enemy.MoveEvery) != 0) continue;
 
-            var stepX = new MoveAttemptEvent { Dx = dx }; World.RaiseLocalEvent(enemyUid, stepX);
-            var stepY = new MoveAttemptEvent { Dy = dy }; World.RaiseLocalEvent(enemyUid, stepY);
+            var stepX = new MoveAttemptEvent { Dx = dx }; Commands.Raise(enemyUid, stepX);
+            var stepY = new MoveAttemptEvent { Dy = dy }; Commands.Raise(enemyUid, stepY);
         }
     }
 }
 
+/* Not possible to make this parallel. */
 [RegisterSystem, UpdatesAfter(typeof(EnemyAISystem))]
 public sealed class EnemySpawnSystem : EntitySystem
 {

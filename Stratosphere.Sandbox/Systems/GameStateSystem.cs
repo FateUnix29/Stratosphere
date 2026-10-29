@@ -4,7 +4,7 @@ using Stratosphere.Core.ECS.Systems;
 
 namespace Stratosphere.Sandbox;
 
-[RegisterSystem]
+[RegisterSystem, ParallelSystem(Reads=[typeof(PlayerComponent), typeof(MetadataComponent)])]
 public sealed class GameStateSystem : EntitySystem
 {
     public int SizeX { get; private set; } = 100;

@@ -5,6 +5,7 @@ using Stratosphere.Core.ECS.Systems;
 namespace Stratosphere.Sandbox;
 
 [RegisterSystem]
+[ParallelSystem(Reads=[typeof(PositionComponent), typeof(FacingComponent), typeof(GlyphComponent), typeof(HealthComponent), typeof(ItemComponent), typeof(TagsComponent)])]
 public sealed class ConsoleRenderSystem : EntitySystem
 {
     private GameStateSystem _state = null!;

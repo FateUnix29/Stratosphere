@@ -11,16 +11,32 @@ namespace Stratosphere.Core.ECS;
 /// </summary>
 public readonly struct EntityRef
 {
-    internal readonly EntityUid Uid;
-    internal readonly int Pending; /* 0 = real UID, else index of spawn cmd + 1 */
-    internal readonly CommandBuffer? Owner;
+    //internal readonly EntityUid Uid;
+    //internal readonly int Pending; /* 0 = real UID, else index of spawn cmd + 1 */
+    //internal readonly CommandBuffer? Owner;
+    internal sealed class Slot { public EntityUid Uid; public bool Spawned; }
 
-    private EntityRef(EntityUid uid, int pending, CommandBuffer? owner) { Uid = uid; Pending = pending; Owner = owner; }
+    private readonly EntityUid _uid;
+    private readonly Slot? _slot;
 
-    public static implicit operator EntityRef(EntityUid uid) => new(uid, 0, null);
-    internal static EntityRef FromPending(int index, CommandBuffer owner) => new(default, index+1, owner);
+    private EntityRef(EntityUid uid, Slot? slot) { _uid = uid; _slot = slot; }
 
-    public bool IsPending => Pending != 0;
+    public static implicit operator EntityRef(EntityUid uid) => new(uid, null);
+    internal static EntityRef FromPending(Slot slot) => new(default, slot);
+
+    /// <summary>
+    /// True if waiting to be spawned.
+    /// </summary>
+    public bool IsPending => _slot is { Spawned: false };
+
+    public bool TryGetUid(out EntityUid uid)
+    {
+        if (_slot == null) { uid = _uid; return true; }
+        uid = _slot.Spawned ? _slot.Uid : default;
+        return _slot.Spawned;
+    }
+
+    internal EntityUid ResolveOrDefault() => _slot == null ? _uid : (_slot.Spawned ? _slot.Uid : default);
 }
 
 /// <summary>
@@ -38,6 +54,7 @@ public sealed class CommandBuffer
         public EntityRef Target;
         public string? Prototype;
         public object? Payload;
+        public Action<EntityUid>? Callback; /* exclusively spawns */
     }
 
     private abstract class DeferredEvent { public abstract void Raise(World world, EntityUid entity); }
@@ -50,19 +67,21 @@ public sealed class CommandBuffer
 
     private List<Command> _commands = new();
     private List<Command>? _spare;
-    private int _pendingCount;
 
     public int Count => _commands.Count;
 
     /// <summary>
     /// Creates an entity from a prototype ID.
-    /// The returned references can be used by later add/remove/etc commands in this very buffer, even if the Spawn command isn't immediately executed.
+    /// The returned references can be used by later add/remove/etc commands in this very buffer, or even others, even if the Spawn command isn't immediately executed.
+    /// After the spawn has happened, the <see cref="EntityUid"/> is available through <see cref="EntityRef.TryGetUid"/>.
     /// </summary>
-    public EntityRef Spawn(string prototypeId)
+    public EntityRef Spawn(string prototypeId) => Spawn(prototypeId, null);
+
+    public EntityRef Spawn(string prototypeId, Action<EntityUid>? onSpawned)
     {
-        var reference = EntityRef.FromPending(_pendingCount++, this); /* always good to remember... _pendingCount's original value is used and THEN it inc's. */
-        _commands.Add(new Command { Kind = Kind.Spawn, Prototype = prototypeId });
-        return reference;
+        var slot = new EntityRef.Slot();
+        _commands.Add(new Command { Kind = Kind.Spawn, Prototype = prototypeId, Payload = slot, Callback = onSpawned});
+        return EntityRef.FromPending(slot);
     }
 
     public void Add<T>(EntityRef entity, T component) where T : class, IComponent
@@ -81,18 +100,9 @@ public sealed class CommandBuffer
 
 
     private void Queue(Kind kind, EntityRef entity, object? payload = null)
-    {
-        if (entity.IsPending && entity.Owner != this)
-            throw new InvalidOperationException("Entity reference came from another command buffer. Referencing a spawned entity only works in the same buffer that spawned it.");
+        => _commands.Add(new Command { Kind = kind, Target = entity, Payload = payload });
 
-        _commands.Add(new Command { Kind = kind, Target = entity, Payload = payload });
-    }
-
-    public void Clear()
-    {
-        _commands.Clear();
-        _pendingCount = 0;
-    }
+    public void Clear() => _commands.Clear();
 
     /// <summary>
     /// Moves everything pending from another command buffer into this one, then empties the other.
@@ -100,15 +110,7 @@ public sealed class CommandBuffer
     /// <param name="other"></param>
     internal void AppendFrom(CommandBuffer other)
     {
-        int offset = _pendingCount;
-        foreach (var command in CollectionsMarshal.AsSpan(other._commands))
-        {
-            var copy = command;
-            if (copy.Target.IsPending)
-                copy.Target = EntityRef.FromPending(copy.Target.Pending - 1 + offset, this);
-            _commands.Add(copy);
-        }
-        _pendingCount += other._pendingCount;
+        _commands.AddRange(other._commands);
         other.Clear();
     }
 
@@ -120,11 +122,7 @@ public sealed class CommandBuffer
         _commands = _spare ?? new List<Command>();
         _spare = null;
 
-        var spawned = _pendingCount > 0 ? new EntityUid[_pendingCount] : null;
-        _pendingCount = 0;
-
         List<Exception>? failures = null;
-        int nextSpawn = 0;
 
         try
         {
@@ -134,12 +132,14 @@ public sealed class CommandBuffer
                 {
                     if (command.Kind == Kind.Spawn)
                     {
-                        spawned![nextSpawn] = world.Spawn(command.Prototype!);
-                        nextSpawn++;
+                        var slot = (EntityRef.Slot)command.Payload!;
+                        slot.Uid = world.Spawn(command.Prototype!);
+                        slot.Spawned = true;
+                        command.Callback?.Invoke(slot.Uid);
                         continue;
                     }
 
-                    var target = command.Target.IsPending ? spawned![command.Target.Pending - 1] : command.Target.Uid;
+                    var target = command.Target.ResolveOrDefault();
                     if (!target.IsValid() || !world.Exists(target)) continue;
 
                     switch (command.Kind)
@@ -153,7 +153,6 @@ public sealed class CommandBuffer
                 catch (Exception e)
                 {
                     (failures ??= new()).Add(e);
-                    if (command.Kind == Kind.Spawn) nextSpawn++;
                 }
             }
         }

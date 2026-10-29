@@ -4,6 +4,7 @@ using Stratosphere.Core.ECS.Systems;
 namespace Stratosphere.Sandbox;
 
 [RegisterSystem, UpdatesAfter(typeof(HandSystem))]
+[ParallelSystem(Reads=[typeof(HealthComponent)], Writes=[typeof(PositionComponent), typeof(ThrowableComponent), typeof(ItemComponent), typeof(PlayerComponent), typeof(SolidComponent)])]
 public sealed class ThrowSystem : EntitySystem
 {
     private GameStateSystem _state = null!;
@@ -45,7 +46,7 @@ public sealed class ThrowSystem : EntitySystem
 
             if (thrown.TimeRemaining <= 0 || !_state.InBounds(x, y))
             {
-                World.QueueDestroy(item);
+                Commands.Destroy(item);
                 continue;
             }
 
@@ -66,10 +67,10 @@ public sealed class ThrowSystem : EntitySystem
         if (World.Has<HealthComponent>(target) && !World.Has<PlayerComponent>(target))
         {
             var damage = new DamageEvent { Amount = thrown.ThrowDamage, Source = item };
-            World.RaiseLocalEvent(target, ref damage);
+            Commands.Raise(target, damage);
         }
 
-        World.QueueDestroy(item);
+        Commands.Destroy(item);
         return true;
     }
 }

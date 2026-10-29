@@ -3,7 +3,7 @@ using Stratosphere.Core.ECS.Systems;
 
 namespace Stratosphere.Sandbox;
 
-[RegisterSystem]
+[RegisterSystem, ParallelSystem(Reads=[typeof(PlayerComponent), typeof(ItemComponent), typeof(FacingComponent)], Writes=[typeof(PositionComponent)])]
 public sealed class HandSystem : EntitySystem
 {
     private GameStateSystem _state = null!;
@@ -33,10 +33,10 @@ public sealed class HandSystem : EntitySystem
         if (player.HeldItem.IsValid())
         {
             var swing = new SwingEvent { User = uid };
-            World.RaiseLocalEvent(player.HeldItem, ref swing);
+            Commands.Raise(player.HeldItem, swing);
 
             var toss = new ThrowEvent { User = uid };
-            World.RaiseLocalEvent(player.HeldItem, ref toss);
+            Commands.Raise(player.HeldItem, toss);
             return;
         }
 
