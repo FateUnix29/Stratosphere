@@ -2,6 +2,7 @@
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
+using Stratosphere.Core.Logging;
 
 namespace Stratosphere.Rendering.OpenGL;
 
@@ -22,15 +23,18 @@ public sealed class GLBackend : IRenderBackend
     private float[] _vertices = new float[FloatsPerVertex * VerticesPerQuad * 256];
     private readonly List<Batch> _batches = new();
 
+    private readonly Sawmill? _log;
+    private int _framesLogged;
     private volatile bool _closeRequested;
     private SizeI _screenSize;
     private bool _disposed;
 
     private readonly record struct Batch(int Texture, int FirstVertex, int VertexCount);
 
-    public GLBackend(GLBackendSettings? settings = null)
+    public GLBackend(GLBackendSettings? settings = null, Sawmill? log = null)
     {
         settings ??= new GLBackendSettings();
+        _log = log;
 
         /* OpenTK prefers that GLFW be used from the first thread, but GLFW is actually just fine with everything being done on one thread, not necessarily the first.
            MacOS is, as usual, an apple product, so it decides to fuck off unless we give it the real first thread.
@@ -54,6 +58,9 @@ public sealed class GLBackend : IRenderBackend
         _window.Closing += _ => _closeRequested = true;
 
         UpdateScreenSize();
+
+        _log?.Info($"GL {GL.GetString(StringName.Version)} on {GL.GetString(StringName.Renderer)} ({GL.GetString(StringName.Vendor)}). "
+        + $"Window {_window.ClientSize.X}*{_window.ClientSize.Y}, drawing area {_screenSize.Width}*{_screenSize.Height} pixels.");
 
         _program = BuildProgram();
         _viewProjectionLocation = GL.GetUniformLocation(_program, "uViewProjection");
@@ -79,7 +86,6 @@ public sealed class GLBackend : IRenderBackend
     }
 
     public bool CloseRequested => _closeRequested;
-
     public SizeI ScreenSize => _screenSize;
 
     public void Pump()
@@ -88,7 +94,7 @@ public sealed class GLBackend : IRenderBackend
         UpdateScreenSize();
     }
 
-    public void UpdateScreenSize()
+    private void UpdateScreenSize()
     {
         var size = _window.FramebufferSize;
         _screenSize = new SizeI(size.X, size.Y);
@@ -148,8 +154,23 @@ public sealed class GLBackend : IRenderBackend
         GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
         GL.Enable(EnableCap.ScissorTest);
 
+        int quads = 0, batches = 0;
         foreach (var packet in frame.Views)
+        {
             DrawView(packet);
+#if DEBUG
+            quads += packet.Quads.Count;
+            batches += _batches.Count;
+#endif
+        }
+
+#if DEBUG
+        if (_framesLogged < 3)
+        {
+            _framesLogged++;
+            _log?.Debug($"Frame {_framesLogged}: {frame.Views.Length} views... {quads} quads, {batches} calls. Drawing area is {_screenSize.Width}*{_screenSize.Height}.");
+        }
+#endif
 
         GL.Disable(EnableCap.ScissorTest);
         _window.Context.SwapBuffers();
@@ -211,7 +232,7 @@ public sealed class GLBackend : IRenderBackend
     {
         _batches.Clear();
 
-        int needed = quads.Length * VerticesPerQuad* FloatsPerVertex;
+        int needed = quads.Length * VerticesPerQuad * FloatsPerVertex;
         if (_vertices.Length < needed) _vertices = new float[Math.Max(needed, _vertices.Length*2)];
 
         int vertex = 0;
@@ -322,7 +343,7 @@ public sealed class GLBackend : IRenderBackend
     private const string VertexSource = @"#version 330 core
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec2 aUv;
-layout(location = 3) in vec4 aColor;
+layout(location = 2) in vec4 aColor;
 
 uniform mat4 uViewProjection;
 uniform float uFlipY; /* -1 when drawing into render target, so that way the texture isn't upside down. */

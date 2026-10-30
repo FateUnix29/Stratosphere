@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stratosphere.Images\Stratosphere.Images.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stratosphere.Core\Stratosphere.Core.csproj" />
+    <ProjectReference Include="..\Stratosphere.Rendering\Stratosphere.Rendering.csproj" />
+    <ProjectReference Include="..\Stratosphere.Images\Stratosphere.Images.csproj" />
+    <ProjectReference Include="..\Stratosphere.Rendering.OpenGL\Stratosphere.Rendering.OpenGL.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Assets\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

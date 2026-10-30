@@ -4,5 +4,6 @@
   <Project Path="Stratosphere.Rendering/Stratosphere.Rendering.csproj" />
   <Project Path="Stratosphere.Sandbox/Stratosphere.Sandbox.csproj" />
   <Project Path="Stratosphere.Images/Stratosphere.Images.csproj" />
+  <Project Path="Stratosphere.RenderDemo/Stratosphere.RenderDemo.csproj" />
   <Project Path="Stratosphere.Rendering.OpenGL/Stratosphere.Rendering.OpenGL.csproj" />
 </Solution>

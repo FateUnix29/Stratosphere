@@ -1,0 +1,46 @@
+- type: entity
+  id: resomi
+  components:
+  - type: Sprite
+    pixelsPerUnit: 32
+    layers:
+    - texture: resomi
+
+- type: entity
+  id: tandenian
+  components:
+  - type: Sprite
+    pixelsPerUnit: 128
+    layers:
+    - texture: tandenian
+
+- type: entity
+  id: eye
+  components:
+  - type: Camera
+    projection: Orthographic
+
+
+- type: entity
+  id: title
+  components:
+  - type: Sprite
+    pixelsPerUnit: 330
+    layers:
+    - texture: title
+
+- type: entity
+  id: heart
+  components:
+  - type: Sprite
+    pixelsPerUnit: 800
+    layers:
+    - texture: heart
+
+- type: entity
+  id: bottom
+  components:
+  - type: Sprite
+    pixelsPerUnit: 400
+    layers:
+    - texture: bottom
