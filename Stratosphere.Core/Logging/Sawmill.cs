@@ -16,7 +16,7 @@ public sealed class Sawmill
 {
     private readonly LogManager _manager;
     private LogLevel _level;
-    private int _levelVersion = 1;
+    private int _levelVersion = -1; /* not a real version so first read does a lookup */
 
     public string Name { get; }
 
