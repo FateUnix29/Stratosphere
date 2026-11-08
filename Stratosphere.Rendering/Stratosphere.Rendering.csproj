@@ -14,4 +14,12 @@
     <ProjectReference Include="..\Stratosphere.Core\Stratosphere.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SpaceWizards.SharpFont" Version="1.1.0" />
+  </ItemGroup>
+
 </Project>
