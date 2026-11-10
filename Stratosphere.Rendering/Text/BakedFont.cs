@@ -3,7 +3,7 @@ using SharpFont;
 
 namespace Stratosphere.Rendering.Text;
 
-public sealed class BakedFont
+public sealed class BakedFont : IFontFace
 {
     private const int Padding = 1;
     private static readonly int[] AtlasWidths = { 256, 512, 1024, 2048, 4096 };
