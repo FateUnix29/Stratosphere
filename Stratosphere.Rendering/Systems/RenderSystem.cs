@@ -60,7 +60,7 @@ public sealed class RenderSystem : EntitySystem
         try { BuildFrame(frame); }
         catch
         {
-            /* Can't draw an empty frame, but it has to go back... Draw empty. */
+            /* Can't draw an incomplete frame, but it has to go back... Draw empty. */
             frame.Clear();
             device.Submit(frame);
             throw;

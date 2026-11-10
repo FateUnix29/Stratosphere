@@ -44,3 +44,6 @@
     pixelsPerUnit: 400
     layers:
     - texture: bottom
+
+- type: entity
+  id: empty

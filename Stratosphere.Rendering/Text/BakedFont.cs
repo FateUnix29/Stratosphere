@@ -95,7 +95,7 @@ public sealed class BakedFont : IFontFace
             float advancePx = slot.Advance.X.ToSingle();
             if (snapAdvances) advancePx = MathF.Round(advancePx);
 
-            raw.Add(new RawGlyph { Codepoint = cpt, GlyphIndex = glyphIndex, Advance = advancePx, Left = slot.BitmapLeft, Top = slot.BitmapTop, Width = width, Height = height });
+            raw.Add(new RawGlyph { Codepoint = cpt, GlyphIndex = glyphIndex, Advance = advancePx, Left = slot.BitmapLeft, Top = slot.BitmapTop, Width = width, Height = height, Coverage = coverage });
         }
 
         var visible = new List<int>();
