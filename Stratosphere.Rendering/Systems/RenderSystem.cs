@@ -3,6 +3,7 @@ using Stratosphere.Core.ECS;
 using Stratosphere.Core.ECS.Components;
 using Stratosphere.Core.ECS.Systems;
 using Stratosphere.Rendering.Components;
+using Stratosphere.Rendering.Text;
 
 namespace Stratosphere.Rendering.Systems;
 
@@ -11,15 +12,18 @@ public sealed class RenderSystem : EntitySystem
 {
     public IRenderDevice? Device { get; set; }
     public ITextureProvider? Textures { get; set; }
+    public IFontProvider? Fonts { get; set; }
 
     private TransformSystem _transforms = null!;
     private SpriteSystem _sprites = null!;
+    private TextSystem _text = null!;
     private readonly List<(int Order, EntityUid Uid, CameraComponent Camera)> _cameras = new();
 
     public override void Initialize()
     {
         _transforms = World.GetSystem<TransformSystem>();
         _sprites = World.GetSystem<SpriteSystem>();
+        _text = World.GetSystem<TextSystem>();
     }
 
     public void BuildFrame(RenderFrame frame)
@@ -42,7 +46,9 @@ public sealed class RenderSystem : EntitySystem
             if (viewport.Width <= 0 || viewport.Height <= 0) continue; /* minimized window, probably */
 
             var view = MakeView(uid, camera, viewport);
-            _sprites.Extract(frame.AddView(in view), Textures);
+            var packet = frame.AddView(in view);
+            _sprites.Extract(packet, Textures);
+            _text.Extract(packet, Fonts);
         }
     }
 
