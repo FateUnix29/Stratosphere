@@ -43,9 +43,8 @@ textures.Load("heart", Path.Combine(assets, "yellow-heart.png"));
 
 if (OperatingSystem.IsWindows()) log.Fatal("microsoft detected. you're fucked");
 var fonts = new FontLibrary();
-fonts.Add("small", BakedFont.Bake(textures, "font-small", ttf, 12f));
-fonts.Add("mid", BakedFont.Bake(textures, "font-mid", ttf, 16f));
-fonts.Add("large", BakedFont.Bake(textures, "font-large", ttf, 48f));
+fonts.Add("32px", BakedFont.Bake(textures, "font-32px", ttf, 32f));
+fonts.Add("96px", BakedFont.Bake(textures, "font-96px", ttf, 96f));
 
 var prototypes = new PrototypeManager();
 prototypes.ComponentFactory.RegisterAssembly(typeof(SpriteComponent).Assembly);
@@ -68,14 +67,14 @@ var heart = world.Spawn("heart");
 var bottom = world.Spawn(/*"bottom"*/ "empty");
 world.Get<TransformComponent>(resomi).LocalPosition = new Vector3d(-0.6, 0.1, 0);
 world.Get<TransformComponent>(tandenian).LocalPosition = new Vector3d(0.6, 0, 0);
-world.Get<TransformComponent>(title).LocalPosition = new Vector3d(0, 0.5, 0);
+world.Get<TransformComponent>(title).LocalPosition = new Vector3d(0, 0.55, 0);
 world.Get<TransformComponent>(heart).LocalPosition = new Vector3d(0, 0, 0);
 world.Get<TransformComponent>(bottom).LocalPosition = new Vector3d(0, -0.5, 0);
 
 var titleComponent = world.Add<TextComponent>(title);
 var bottomComponent = world.Add<TextComponent>(bottom);
-titleComponent.Text = "Stratosphere"; titleComponent.Font = "large"; titleComponent.PixelsPerUnit = 48f; titleComponent.Color = Color.White; titleComponent.Scale = new Vector2(0.25f, 0.25f);
-bottomComponent.Text = "Heavily inspired by RobustToolbox from Space Station 14"; bottomComponent.Font = "small"; bottomComponent.PixelsPerUnit = 48f; bottomComponent.Color = Color.White; bottomComponent.Scale = new Vector2(0.25f, 0.25f);
+titleComponent.Text = "Stratosphere"; titleComponent.Font = "96px"; titleComponent.PixelsPerUnit = 96f; titleComponent.Color = Color.White; titleComponent.Scale = new Vector2(0.25f, 0.25f);
+bottomComponent.Text = "Heavily inspired by RobustToolbox from Space Station 14"; bottomComponent.Font = "32px"; bottomComponent.PixelsPerUnit = 96f; bottomComponent.Color = Color.White; bottomComponent.Scale = new Vector2(0.17f, 0.17f);
 
 var eye = world.Spawn("eye");
 world.Get<TransformComponent>(eye).LocalPosition = new Vector3d(0, 0, 10);

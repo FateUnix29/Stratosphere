@@ -120,7 +120,7 @@ public sealed class BakedFont : IFontFace
 
         var rgba = new byte[atlasWidth * atlasHeight * 4];
         Array.Fill(rgba, (byte)255);
-        for (int i = 0; i < rgba.Length; i++) rgba[i] = 0;
+        for (int i = 3; i < rgba.Length; i += 4) rgba[i] = 0;
 
         var glyphs = new Dictionary<int, GlyphInfo>(raw.Count);
         var glyphIndices = new Dictionary<int, uint>(raw.Count);
