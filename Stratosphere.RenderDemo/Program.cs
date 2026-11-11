@@ -26,6 +26,7 @@ string fontPath;
 try { fontPath = args.Length > 0 ? args[0] : SystemFonts.Require(SystemFonts.CommonSans); }
 catch (FileNotFoundException e) { log.Error(e.Message); return 1; }
 log.Info($"Using font {fontPath}");
+if (OperatingSystem.IsWindows()) log.Fatal("microsoft detected. you're fucked");
 using var ttf = TtfFont.FromFile(fontPath);
 
 GLBackend? backend = null;
@@ -41,7 +42,6 @@ textures.Load("tandenian", Path.Combine(assets, "Tandenian_x4.png"));
 textures.Load("heart", Path.Combine(assets, "yellow-heart.png"));
 //textures.Load("bottom", Path.Combine(assets, "bottom.png"));
 
-if (OperatingSystem.IsWindows()) log.Fatal("microsoft detected. you're fucked");
 var fonts = new FontLibrary();
 fonts.Add("32px", BakedFont.Bake(textures, "font-32px", ttf, 32f));
 fonts.Add("96px", BakedFont.Bake(textures, "font-96px", ttf, 96f));
