@@ -18,14 +18,7 @@ Nomen's lore can be found on the [Discord](https://discord.gg/FYGrDjJJtt). **Ple
 
 ----
 
-Stratosphere is planned to be a rather small and lightweight kind-of-game-engine-kind-of-not for the Rainstorm Project.
-~~It is built on top of the magnificent BRUTAL, as well as a few external bindings.~~
-
-~~All it really needs to do is handle the intermediary level between Rainstorm and BRUTAL. The rendering and the likes.~~
-
-~~Beware of BRUTAL's licensing requirements.~~
-
-So far, Stratosphere hasn't actually been using BRUTAL. It's managed to find alternatives everywhere. The previous notice still stands for now, but will be removed if we continue to not use BRUTAL.
+Stratosphere is the eternally in-progress game engine for the N.C.N.P. Rainstorm Project.
 
 ## Licensing
 
@@ -38,6 +31,8 @@ The core of the project (the code and the likes) is licensed under MIT.
 However, assets (models, artwork, sound files...) will be licensed under [CC-BY-SA-4.0](https://creativecommons.org/licenses/by-sa/4.0) unless stated otherwise.
 
 ## Thank You
+Please check `CREDITS.md` for the open source projects we rely on. We thank these projects for making any of this possible.
+
 Thank you to anyone who decides to contribute!
 
 [![Contributors](https://contrib.rocks/image?repo=FateUnix29/Stratosphere)](https://github.com/FateUnix29/Stratosphere/graphs/contributors)
