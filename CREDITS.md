@@ -1,0 +1,3 @@
+This project is built with the following open source libraries...
+- ImageSharp
+- FreeType
